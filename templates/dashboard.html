@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ticket Agent</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 20px 40px;
+      border-bottom: 1px solid #1e2433;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f1117;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    header span {
+      font-size: 12px;
+      color: #4ade80;
+      background: #052e16;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid #166534;
+    }
+
+    .toolbar {
+      padding: 24px 40px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #1e2433;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: #1e2433;
+      color: #fff;
+      border-color: #334155;
+    }
+
+    .process-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      background: #6366f1;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .process-btn:hover { background: #4f46e5; }
+    .process-btn:disabled { background: #334155; cursor: not-allowed; }
+
+    .stats {
+      padding: 0 40px 20px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .stat {
+      background: #151821;
+      border: 1px solid #1e2433;
+      border-radius: 8px;
+      padding: 14px 20px;
+      min-width: 120px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .table-wrap {
+      padding: 0 40px 40px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 16px;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #1e2433;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #151821;
+      transition: background 0.1s;
+    }
+
+    tbody tr:hover { background: #151821; }
+
+    tbody td {
+      padding: 14px 16px;
+      color: #cbd5e1;
+      vertical-align: middle;
+    }
+
+    .ticket-id { color: #475569; font-size: 12px; font-family: monospace; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .priority-high   { background: #3f1515; color: #f87171; border: 1px solid #7f1d1d; }
+    .priority-medium { background: #2d2010; color: #fb923c; border: 1px solid #7c2d12; }
+    .priority-low    { background: #0f2d1a; color: #4ade80; border: 1px solid #14532d; }
+
+    .status-open        { background: #0c1a3a; color: #60a5fa; border: 1px solid #1e3a5f; }
+    .status-in_progress { background: #1e1a3a; color: #a78bfa; border: 1px solid #3730a3; }
+    .status-resolved    { background: #0f2d1a; color: #4ade80; border: 1px solid #14532d; }
+    .status-closed      { background: #1a1a1a; color: #64748b; border: 1px solid #334155; }
+
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e2433;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Ticket Agent</h1>
+  <span>● Live</span>
+</header>
+
+<div class="toolbar">
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('open', this)">Open</button>
+    <button class="filter-btn" onclick="setFilter('in_progress', this)">In Progress</button>
+    <button class="filter-btn" onclick="setFilter('resolved', this)">Resolved</button>
+  </div>
+  <button class="process-btn" id="processBtn" onclick="processEmails()">Check Emails</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Assignee</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody id="ticketBody"></tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let allTickets = [];
+  let currentFilter = 'all';
+
+  async function loadTickets() {
+    const res = await fetch('/tickets/');
+    allTickets = await res.json();
+    renderStats();
+    renderTable();
+  }
+
+  function renderStats() {
+    const open = allTickets.filter(t => t.status === 'open').length;
+    const inProgress = allTickets.filter(t => t.status === 'in_progress').length;
+    const resolved = allTickets.filter(t => t.status === 'resolved').length;
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="stat-value">${allTickets.length}</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-value">${open}</div><div class="stat-label">Open</div></div>
+      <div class="stat"><div class="stat-value">${inProgress}</div><div class="stat-label">In Progress</div></div>
+      <div class="stat"><div class="stat-value">${resolved}</div><div class="stat-label">Resolved</div></div>
+    `;
+  }
+
+  function renderTable() {
+    const tickets = currentFilter === 'all' ? allTickets : allTickets.filter(t => t.status === currentFilter);
+    const tbody = document.getElementById('ticketBody');
+    if (tickets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No tickets found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = tickets.map(t => `
+      <tr>
+        <td class="ticket-id">#${t.id}</td>
+        <td>${t.title}</td>
+        <td>${t.assignee || '<span style="color:#475569">—</span>'}</td>
+        <td><span class="badge priority-${t.priority}">${t.priority}</span></td>
+        <td><span class="badge status-${t.status}">${t.status.replace('_', ' ')}</span></td>
+        <td>${new Date(t.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+  }
+
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+  }
+
+  async function processEmails() {
+    const btn = document.getElementById('processBtn');
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    const res = await fetch('/process-emails', { method: 'POST' });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.textContent = 'Check Emails';
+    showToast(`Scanned ${data.emails_scanned} emails — ${data.tickets_created} new ticket(s) created`);
+    loadTickets();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 4000);
+  }
+
+  loadTickets();
+  setInterval(loadTickets, 30000);
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.database import engine
 from app import models
@@ -21,6 +22,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Ticket Agent", lifespan=lifespan)
 app.include_router(tickets_router)
+templates = Jinja2Templates(directory="templates")
+
+
+@app.get("/")
+def dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @app.get("/health")
